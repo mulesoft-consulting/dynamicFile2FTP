@@ -1,0 +1,16 @@
+#%RAML 0.8
+title: file2ftp
+version: 1.0
+baseUri: http://file2ftp.cloudhub.io/api
+/file:
+  put:
+    body:
+      application/json:
+        schema: !include file2ftp-schema.json
+        example: !include file2ftp-example.json
+    responses:
+      200:
+        body:
+          application/json: 
+            example: |
+              { "message" : "file uploaded"}

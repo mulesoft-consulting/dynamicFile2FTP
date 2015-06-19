@@ -1,0 +1,14 @@
+{
+  "source": {
+    "directory": "/junk/file2ftp/",
+    "fileName": "file2ftp.raml"
+  },
+  "destination": {
+    "ftpType": "FTP",
+    "host": "54.175.8.238",
+    "port" : "21",
+    "user" : "mule",
+    "password" : "mule!",
+    "path": "/"
+  }
+}

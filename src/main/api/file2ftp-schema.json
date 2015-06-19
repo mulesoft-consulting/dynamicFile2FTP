@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "http://jsonschema.net",
+  "type": "object",
+  "properties": {
+    "source": {
+      "id": "http://jsonschema.net/source",
+      "type": "object",
+      "properties": {
+        "directory": {
+          "id": "http://jsonschema.net/contact/directory",
+          "type": "string"
+        },
+        "fileName": {
+          "id": "http://jsonschema.net/contact/fileName",
+          "type": "string"
+        }
+      }
+    },
+    "destination": {
+      "id": "http://jsonschema.net/destination",
+      "type": "object",
+      "properties": {
+        "ftpType": {
+          "id": "http://jsonschema.net/address/ftpType",
+          "type": "string",
+          "enum": [ "FTP", "SFTP", "FTPS" ]
+        },
+        "host": {
+          "id": "http://jsonschema.net/address/host",
+          "type": "string"
+        },
+        "port": {
+          "id": "http://jsonschema.net/address/port",
+          "type": "string"
+        },
+        "user": {
+          "id": "http://jsonschema.net/address/user",
+          "type": "string"
+        },
+        "password": {
+          "id": "http://jsonschema.net/address/password",
+          "type": "string"
+        },
+        "path": {
+          "id": "http://jsonschema.net/address/path",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

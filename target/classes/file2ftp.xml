@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd" version="EE-3.6.1">
+    <http:listener-config name="file2ftp-httpListenerConfig" host="localhost" port="8081" doc:name="HTTP Listener Configuration" />
+    <apikit:config name="file2ftp-config" raml="file2ftp.raml" consoleEnabled="true" consolePath="console" doc:name="Router" />
+    <data-mapper:config name="Json_To_Map" transformationGraphPath="json_to_map.grf" doc:name="Json_To_Map"/>
+    <apikit:mapping-exception-strategy name="file2ftp-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property" />
+            <set-payload value="{ &quot;message&quot;: &quot;Bad request&quot; }" doc:name="Set Payload" />
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+    <flow name="file2ftp-main">
+        <http:listener config-ref="file2ftp-httpListenerConfig" path="/api/*" doc:name="HTTP" />
+        <apikit:router config-ref="file2ftp-config" doc:name="APIkit Router" />
+        <exception-strategy ref="file2ftp-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy" />
+    </flow>
+    <flow name="put:/file:application/json:file2ftp-config">
+        <data-mapper:transform config-ref="Json_To_Map" doc:name="Json To Map"/>
+        <set-variable variableName="inParams" value="#[payload]" doc:name="save inbound parameters"/>
+        <set-variable variableName="fullFileName" value="#[inParams.source.directory + inParams.source.fileName]" doc:name="create fullFileName"/>
+        <set-session-variable variableName="destination" value="#[payload.destination]" doc:name="Set Session Variable"/>
+        <scripting:component doc:name="read file">
+            <scripting:script engine="Groovy"><![CDATA[fullFileName = payload.source.directory + payload.source.fileName;
+String fileContents = new File(fullFileName);]]></scripting:script>
+        </scripting:component>
+        <choice doc:name="Choice">
+            <when expression="#[inParams.destination.ftpType == &quot;SFTP&quot;]">
+                <sftp:outbound-endpoint exchange-pattern="one-way" outputPattern="#[inParams.source.fileName]" host="#[sessionVars['destination']['host']]" port="22" path="#[sessionVars['destination']['path']]" user="#[sessionVars['destination']['user']]" password="#[sessionVars['destination']['password']]" responseTimeout="10000" doc:name="PUT"/>
+            </when>
+            <otherwise>
+<!--                <scripting:component doc:name="Groovy">
+                     <scripting:script engine="Groovy"><![CDATA[import org.jibble.simpleftp.*; 
+def ftp = new SimpleFTP(); 
+ftp.connect( ${inParams.destination.host}, ${inParams.destination.port}, ${inParams.destination.user} , ${inParams.destination.password} ); 
+ftp.bin(); 
+ftp.stor(new File( ${inParams.destination.path} )); 
+ftp.disconnect(); ]]></scripting:script>
+                </scripting:component> -->
+                <ftp:outbound-endpoint host="#[sessionVars['destination']['host']]" port="21" path="#[sessionVars['destination']['path']]" user="#[sessionVars['destination']['user']]" password="#[sessionVars['destination']['user']]" passive="false" outputPattern="#[inParams.source.fileName]" responseTimeout="10000" doc:name="PUT"/>
+            </otherwise>
+        </choice>
+        <set-payload value="{ &quot;message&quot; : &quot;file #[inParams.source.fileName]&quot;}" doc:name="Set Response"/>
+    </flow>
+</mule>
