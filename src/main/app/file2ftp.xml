@@ -8,7 +8,7 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd
 http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
 http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
-http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd" version="EE-3.6.1">
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd" version="EE-3.6.2">
     <http:listener-config name="file2ftp-httpListenerConfig" host="localhost" port="8081" doc:name="HTTP Listener Configuration" />
     <apikit:config name="file2ftp-config" raml="file2ftp.raml" consoleEnabled="true" consolePath="console" doc:name="Router" />
     <data-mapper:config name="Json_To_Map" transformationGraphPath="json_to_map.grf" doc:name="Json_To_Map"/>
@@ -51,7 +51,7 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
         <set-session-variable variableName="destination" value="#[payload.destination]" doc:name="Set Session Variable"/>
         <scripting:component doc:name="read file">
             <scripting:script engine="Groovy"><![CDATA[fullFileName = payload.source.directory + payload.source.fileName;
-String fileContents = new File(fullFileName);]]></scripting:script>
+return new FileInputStream(new File(fullFileName));]]></scripting:script>
         </scripting:component>
         <choice doc:name="Choice">
             <when expression="#[inParams.destination.ftpType == &quot;SFTP&quot;]">
@@ -66,7 +66,7 @@ ftp.bin();
 ftp.stor(new File( ${inParams.destination.path} )); 
 ftp.disconnect(); ]]></scripting:script>
                 </scripting:component> -->
-                <ftp:outbound-endpoint host="#[sessionVars['destination']['host']]" port="21" path="#[sessionVars['destination']['path']]" user="#[sessionVars['destination']['user']]" password="#[sessionVars['destination']['user']]" passive="false" outputPattern="#[inParams.source.fileName]" responseTimeout="10000" doc:name="PUT"/>
+                <ftp:outbound-endpoint host="#[sessionVars['destination']['host']]" port="21" path="#[sessionVars['destination']['path']]" user="#[sessionVars['destination']['user']]" password="#[sessionVars['destination']['password']]" passive="false" outputPattern="#[inParams.source.fileName]" responseTimeout="10000" doc:name="PUT"/>
             </otherwise>
         </choice>
         <set-payload value="{ &quot;message&quot; : &quot;file #[inParams.source.fileName]&quot;}" doc:name="Set Response"/>
