@@ -4,11 +4,11 @@
     "fileName": "file2ftp.raml"
   },
   "destination": {
-    "ftpType": "FTP",
-    "host": "54.175.8.238",
-    "port" : "21",
+    "ftpType": "SFTP",
+    "host": "54.225.224.142",
+    "port" : "22",
     "user" : "mule",
-    "password" : "mule!",
-    "path": "/"
+    "password" : "Mule!123",
+    "path": "home/mule"
   }
 }
